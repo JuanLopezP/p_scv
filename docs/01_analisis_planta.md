@@ -4,15 +4,16 @@
 
 ### 1.1. Contexto del proyecto
 
-El presente proyecto se desarrolla en el marco de la asignatura *Sistemas de Control de Vehículos* del Grado en Ingeniería Electrónica, Robótica y Mecatrónica de la Universidad de Málaga.
+Este proyecto se encuentra dentro de la asignatura *Sistemas de Control de Vehículos* del Grado en Ingeniería Electrónica, Robótica y Mecatrónica de la Universidad de Málaga.
 
 Su finalidad es estudiar, modelar y evaluar el comportamiento dinámico de un monoplaza de competición Formula Student Driverless mediante simulación en MATLAB.
 
-Se parte del modelo desarrollado en las prácticas P1 (*Dinámica Longitudinal del Vehículo*) y P2 (*Dinámica Lateral del Vehículo*).
+Se parte del modelo desarrollado en las prácticas P1 (*Dinámica Longitudinal del Vehículo*), P2 (*Dinámica Lateral del Vehículo*), P3 (*Diseño de un controlador ACC*), P4 (*asdf*) y P5 (*adsfas*).
 
 La P1 introduce el movimiento longitudinal del vehículo y un controlador PI de velocidad. Posteriormente, la P2 amplía la planta incorporando la dinámica lateral mediante dos aproximaciones:
 
-- **Modelo de bicicleta cinemático:** describe el movimiento a partir de relaciones geométricas, sin considerar el deslizamiento de los neumáticos.
+- **Modelo de bicicleta cinemático:** describe el movimiento a partir de relaciones geométricas, sin considerar el deslizamiento de los neumáticos para los que se asume un modelo lineal.
+
 - **Modelo de bicicleta dinámico:** incorpora fuerzas laterales de los neumáticos, ángulos de deriva y dinámica de guiñada.
 
 El modelo dinámico de la P2 constituye la planta base sobre la que se estudiará una mejora específica del comportamiento del monoplaza.
@@ -31,61 +32,30 @@ Los objetivos de este documento son:
 6. Identificar las hipótesis y limitaciones de la planta original.
 7. Establecer una base teórica para evaluar posibles mejoras.
 
-### 1.3. Alcance
-
-Este documento se limita al análisis de la planta proporcionada por el profesor.
-
-No se introducirán inicialmente modificaciones en las ecuaciones originales. El objetivo es disponer de una referencia documentada y reproducible con la que comparar posteriormente una única mejora seleccionada.
-
-Se conservarán los nombres de variables, parámetros e interfaces definidos en las prácticas.
-
----
 
 ## 2. Arquitectura de la planta
 
 ### 2.1. Descripción general
 
-La planta representa la evolución del estado del monoplaza a partir de su estado actual y de las acciones de control aplicadas.
+La planta representa el modelo del sistema físico cuyo comportamiento queremos estudiar y controlar. Esta planta sirve de base para aplicar las diferentes acciones de control que nos permitirán ajustar y a la que acoplaremos el controlador.
 
-En la P2, el modelo dinámico se implementa mediante la función:
+El sistema físico que estamos modelando es un monoplaza en el que partimos de un modelo considerablemente básico al que iremos añadiendo complementos que pueden hacer que se mejoren las capacidades o que se empeoren.
 
-```matlab
-function z_next = pasoDinamico(z, u, p, dt)
-```
+La planta nos permite obtener el estado en el que se va a encontrar el vehículo en el instante siguiente de la simulación.
 
-Esta función calcula el estado del vehículo después de un intervalo temporal `dt`.
-
-Su formulación general es:
-
-\[
-z_{k+1}=f(z_k,u_k,p,dt)
-\]
-
-donde:
-
-- \(z_k\): estado del vehículo en el instante actual.
-- \(u_k\): vector de entradas de control.
-- \(p\): estructura de parámetros físicos.
-- \(dt\): paso temporal de integración.
-- \(z_{k+1}\): estado actualizado.
-
-La planta utiliza una representación concentrada del vehículo mediante un modelo de bicicleta, en el que las fuerzas laterales se agrupan en los ejes delantero y trasero.
+Se nos proporciona dos modelos: 
+- Modelo cinemático, basado en relaciones geométricas para describir el movimiento lateral. 
+- Modelo dinámico, añade fuerzas laterales y las inercias del vehículo. 
 
 ### 2.2. Vector de estados
 
 El modelo dinámico utiliza seis variables de estado:
 
-\[
-z=
-\begin{bmatrix}
-X\\
-Y\\
-\psi\\
-v_x\\
-v_y\\
-r
+$$
+z = \begin{bmatrix}
+X \\ Y \\ \psi \\ v_x \\ v_y \\ r
 \end{bmatrix}
-\]
+$$
 
 | Variable | Descripción | Unidad |
 |---|---|---|
@@ -96,30 +66,30 @@ r
 | `vy` | Velocidad lateral en el sistema del vehículo | m/s |
 | `r` | Velocidad angular de guiñada | rad/s |
 
-Es importante distinguir entre las posiciones globales `X`, `Y` y las velocidades locales `vx`, `vy`.
+No podemos confundir entre las posiciones globales `X`, `Y` y las velocidades locales `vx`, `vy`.
 
-Esta diferencia obliga a transformar las velocidades entre sistemas de referencia para calcular correctamente la trayectoria del monoplaza.
+Esta diferencia requiere en algunas ocasiones utilizar las transformaciones necesarias para pasar de las 
+
+
 
 ### 2.3. Vector de entradas
 
 El modelo recibe dos entradas:
 
-\[
+$$
 u=
 \begin{bmatrix}
 F_x\\
 \delta
 \end{bmatrix}
-\]
+$$
 
 | Variable | Descripción | Unidad |
 |---|---|---|
 | `Fx` | Fuerza longitudinal solicitada | N |
 | `delta` | Ángulo de dirección | rad |
 
-La entrada `Fx` abstrae el comportamiento del tren de potencia y del sistema de frenado.
-
-Por tanto, la planta base no recibe directamente el par motor ni la posición del acelerador.
+La entrada `Fx` se toma por simplicidad. No tomamos la posición del acelerador para evitar modelar como esto afecta a las revoluciones del motor y el par que este debe entregar. Tampoco tomamos el par entregado por el motor para evitar modelar subsistemas como, la relación de transmisión, el rendimiento, dinámica de rotación de las ruedas o la adherencia del neumático.
 
 La entrada `delta` representa el ángulo de dirección empleado en el modelo de bicicleta.
 
