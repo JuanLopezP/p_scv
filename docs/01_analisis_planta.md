@@ -49,7 +49,7 @@ Se nos proporciona dos modelos:
 
 ### 2.2. Vector de estados
 
-El modelo dinámico utiliza seis variables de estado:
+El los modelos proporcionados utilizan seis variables de estado:
 
 $$
 z = \begin{bmatrix}
@@ -66,9 +66,8 @@ $$
 | `vy` | Velocidad lateral en el sistema del vehículo | m/s |
 | `r` | Velocidad angular de guiñada | rad/s |
 
-No podemos confundir entre las posiciones globales `X`, `Y` y las velocidades locales `vx`, `vy`.
+No podemos confundir entre las posiciones globales `X`, `Y` y las velocidades locales `vx`, `vy`. Estas últimas depende del eje x e y del chasis.
 
-Esta diferencia requiere en algunas ocasiones utilizar las transformaciones necesarias para pasar de las 
 
 
 
@@ -95,14 +94,14 @@ La entrada `delta` representa el ángulo de dirección empleado en el modelo de 
 
 ### 2.4. Parámetros físicos
 
-Los parámetros se agrupan en la estructura `p`.
+Los parámetros se agrupan en la estructura `p` y caracterizan las propiedades del monoplaza. Estos se mantienen constantes durante cada ensayo.
 
 | Parámetro MATLAB | Valor P2 | Unidad | Significado |
 |---|---:|---|---|
 | `p.m` | 230 | kg | Masa |
 | `p.g` | 9.81 | m/s² | Gravedad |
 | `p.rho` | 1.225 | kg/m³ | Densidad del aire |
-| `p.Cd` | 1.0 | — | Coeficiente aerodinámico |
+| `p.Cd` | 1.0 | — | Coeficiente de resistencia aerodinámica |
 | `p.Af` | 1.1 | m² | Área frontal |
 | `p.fr` | 0.022 | — | Coeficiente de rodadura |
 | `p.ld` | 0.765 | m | Distancia del CG al eje delantero |
@@ -110,15 +109,15 @@ Los parámetros se agrupan en la estructura `p`.
 | `p.Iz` | 130 | kg·m² | Inercia de guiñada |
 | `p.Cad` | 35000 | N/rad | Rigidez de deriva delantera |
 | `p.Cat` | 50000 | N/rad | Rigidez de deriva trasera |
-| `p.mu_t` | 1.5 | — | Coeficiente de rozamiento trasero |
-| `p.mu_d` | 1.425 | — | Coeficiente de rozamiento delantero |
-| `p.Fx_drive_max` | 2500 | N | Fuerza motriz máxima |
-| `p.Fx_brake_max` | 5000 | N | Fuerza de frenado máxima |
+| `p.mu_t` | 1.5 | — | Coeficiente de adherencia trasero |
+| `p.mu_d` | 1.425 | — | Coeficiente de adherencia delantero |
+| `p.Fx_drive_max` | 2500 | N | Límite de fuerza motriz máxima |
+| `p.Fx_brake_max` | 5000 | N | Límite de fuerza de frenado máxima |
 | `p.theta` | 0 | rad | Inclinación de la calzada |
 
-Los valores corresponden a la configuración proporcionada en la P2.
+Los valores corresponden a la configuración proporcionada en las prácticas como modelo base.
 
-### 2.5. Salida de la planta
+### 2.5. Interfáz y salida de la planta
 
 La función devuelve:
 
@@ -127,8 +126,8 @@ z_next
 ```
 
 con la misma estructura que el vector de estados:
+$$
 
-\[
 z_{k+1}=
 \begin{bmatrix}
 X_{k+1}\\
@@ -138,9 +137,9 @@ v_{x,k+1}\\
 v_{y,k+1}\\
 r_{k+1}
 \end{bmatrix}
-\]
+$$
 
-La salida representa el estado del monoplaza después de aplicar las entradas durante un paso de integración.
+La salida nos da los valores de las variables de estado en el siguiente instante en base a como se encontraba y las entradas que están actuando sobre él. Repetir este cálculo durante el tiempo de simulación será lo que nos permita obtener las gráficas con el comportamiento del monoplaza.
 
 ---
 
