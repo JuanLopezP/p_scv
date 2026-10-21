@@ -157,7 +157,187 @@ La salida nos da los valores de las variables de estado en el siguiente instante
 
 ## 6. Modelo de neumáticos
 
-*Pendiente de desarrollar: ángulos de deriva, fuerzas laterales y límites de adherencia.*
+### 6.1. Ángulos de deriva
+
+El angulo de deriva $\alpha$ es el angulo entre hacia dónde apunta la rueda y hacia dónde se mueve realmente la zona que está en contacto con la superficie. 
+
+¿Por qué ocurre? --> La goma se deforma en la huella de contacto, y esa deformación es la que genera la fuerza lateral. Si no tengo $ \alpha$ no tengo Fy. 
+
+Velocidad lateral del punto de contacto de cada eje, en ejes del vehículo:
+
+$$
+v_{y,d} = v_y + l_d\,r \qquad v_{y,t} = v_y - l_t\,r
+$$
+
+Razón por la que los signos se invierten: Pongo una regla girando sobre su centro: un extremo se mueve hacia un lado y el otro hacia el otro, esto será más rápido cuanto más lejos esté ese punto del centro. Si tengo que el coche gira a la izquierda ocurrirá: 
+- El eje delantero se desplaza a la izquierda
+- El eje trasero se desplaza a la derecha (signo contrario al delantero).
+
+Todo esto se suma a la velocidad $ v_y $.
+
+Ángulos de deriva (aproximación de ángulos pequeños, $\tan\alpha \approx \alpha$):
+
+$$
+\alpha_d = \delta - \frac{v_y + l_d\,r}{v_x}
+\qquad
+\alpha_t = -\,\frac{v_y - l_t\,r}{v_x}
+$$
+
+| Variable | Descripción | Unidad |
+|---|---|---|
+| `alpha_d` | Ángulo de deriva del eje delantero | rad |
+| `alpha_t` | Ángulo de deriva del eje trasero | rad |
+| `delta` | Ángulo de dirección (solo eje delantero) | rad |
+| `vx_c` | Velocidad longitudinal corregida, $\max(v_x, 1)$ | m/s |
+
+Implementación en `pasoDinamico`:
+
+```matlab
+vx_c = max(vx, 1.0); % Tomo esto para tomar como mínimo 1 y no dividir entre 0 
+alpha_d = delta - (vy + p.ld*r)/vx_c;
+alpha_t = - (vy - p.lt*r)/vx_c;
+```
+
+
+Repaso de los ángulos: 
+
+| Ángulo | Entre... | ...y... |
+|---|---|---|
+| $\delta$ (dirección) | eje longitudinal del chasis | plano de la rueda delantera |
+| $\beta$ (deriva del vehículo) | eje longitudinal del chasis | vector velocidad del CG, $\beta = \arctan(v_y/v_x)$ |
+| $\alpha$ (deriva del neumático) | plano de la rueda | vector velocidad **del punto de contacto de esa rueda** |
+
+### 6.2. Fuerza lateral en la zona lineal
+
+Para que un vehículo se mueva en círculo debe haber una fuerza que lo mantenga ahí. Esta fuerza se genera en los neumáticos, que son los que están en contacto con el suelo. Estos actúan como un muelle situado en horizontal, si la rueda tiene un cierto ángulo $\alpha$ la goma se retorcerá de lado y de la misma forma esta ejercerá una fuerza en sentido contrario. 
+
+
+$$
+F_{y,d} = C_{\alpha d}\,\alpha_d \qquad F_{y,t} = C_{\alpha t}\,\alpha_t
+$$
+
+| Parámetro | Valor P2 | Unidad |
+|---|---:|---|
+| `p.Cad` | 35000 | N/rad |
+| `p.Cat` | 50000 | N/rad |
+
+$C_\alpha$ es la dureza del muelle y depende de las propiedades del neumático, en nuestro caso vale menos el delantero que el trasero. Por esta razón, el eje delantero deriva más y el vehículo describe un radio mayor al que impone la dirección. 
+
+Fuerza que debe dar cada eje y ángulo resultante.
+
+$$
+F_{y,d} = m\,a_y\,\frac{l_t}{L} \;\Rightarrow\; \alpha_d = \frac{F_{y,d}}{C_{\alpha d}}
+\qquad
+F_{y,t} = m\,a_y\,\frac{l_d}{L} \;\Rightarrow\; \alpha_t = \frac{F_{y,t}}{C_{\alpha t}}
+$$
+
+El gradiente de subviraje representa cuánto volante extra necesito por cada unidad de aceleración lateral $a_y$:
+
+$$
+\delta = \frac{L}{R} + K\,a_y
+\qquad
+K = \frac{m}{L}\left(\frac{l_t}{C_{\alpha d}} - \frac{l_d}{C_{\alpha t}}\right)
+$$
+
+Sin deriva sería, para un radio R $ \delta = L/R $. Pero al trabajar con neumáticos reales el eje delantero deriva más que el trasero y hay que corregir $\delta$ para el mismo círculo. Esto depende proporcionalmente de la aceleración. 
+
+Casos: 
+- K > 0 vehículo subvirador. 
+- K = 0 vehículo neutro. 
+- K < 0 vehículo sobrevirador.
+
+En nuestra práctica el simulador del skidpad deja $\delta$ fijo, no se añade ese giro de volante extra para compensar y como consecuencia el radio de giro se abre. Si incluimos un controlador lateral, este debería de ser capáz de corregir ese error. 
+
+### 6.3. Límites de adherencia
+
+El muelle solo empuja hasta un máximo, a partir de ahí la goma desliza y la fuerza ya no crece.
+
+Carga vertical por eje (estática, sin transferencia de carga):
+
+$$
+F_{z,d} = m\,g\,\frac{l_t}{L} \qquad F_{z,t} = m\,g\,\frac{l_d}{L}
+$$
+
+Saturación de la fuerza lateral:
+
+$$
+|F_{y,d}| \le \mu_d\,F_{z,d} \qquad |F_{y,t}| \le \mu_t\,F_{z,t}
+$$
+
+| Eje | $F_z$ [N] | $\mu$ | $F_{y,\max}$ [N] | $a_{y,\max}$ [g] |
+|---|---:|---:|---:|---:|
+| Delantero | 1128 | 1,425 | 1608 | 1,425 |
+| Trasero | 1128 | 1,50 | 1692 | 1,50 |
+
+```matlab
+Fyd = max(min(Fyd, p.mu_d*Fzd), -p.mu_d*Fzd);
+Fyt = max(min(Fyt, p.mu_t*Fzt), -p.mu_t*Fzt);
+```
+
+El eje que satura primero es el delantero. En el límite el coche se va de morro.
+
+### 6.4. Fuerza longitudinal
+
+La planta no incluye un modelo longitudinal del neumático. La fuerza $F_x$ es una entrada que se satura al agarre total:
+
+$$
+|F_x| \le F_{x,\max} = \mu_d\,F_{z,d} + \mu_t\,F_{z,t} \approx 3300\ \text{N}\ (1{,}46\,g)
+$$
+
+```matlab
+Fx_max = p.mu_d*Fzd + p.mu_t*Fzt; 
+Fx = max(min(Fx, Fx_max), -Fx_max);
+```
+En este caso estoy tomando tracción a las cuatro ruedas al tomar Fzd y Fzt.
+
+| Límite | Valor [N] | Dónde se aplica | ¿Activo? |
+|---|---:|---|---|
+| Agarre total | 3300 | Planta | Solo en frenada |
+| Motor `Fx_drive_max` | 2500 | Controlador | Siempre en tracción |
+| Freno `Fx_brake_max` | 5000 | Controlador | No (lo recorta el agarre) |
+
+### 6.5. Comparación con modelos más completos
+
+| Modelo | Qué describe | Fuente | ¿En la planta P2? |
+|---|---|---|---|
+| Lineal con saturación | $F_y = C_\alpha\,\alpha$ hasta $\mu F_z$ | Tema 2.2, diap. 27 | Sí |
+| Pacejka (Magic Formula) | Curva completa $F(\alpha)$ o $F(\kappa)$ con pico y caída | Tema 2.2, diap. 11–14 | No |
+| Burckhardt | $\mu(\sigma)$ longitudinal según el firme | Tema 3.2, diap. 6 | No |
+| Elipse de fricción | Límite combinado $F_x$–$F_y$ | Tema 2.2, diap. 19 | No |
+
+Magic Formula (forma general):
+
+$$
+F = D\,\sin\!\Big(C\,\arctan\big(B\,x - E\,(B\,x - \arctan(B\,x))\big)\Big)
+$$
+
+Burckhardt:
+
+$$
+\mu(\sigma) = c_1\left(1 - e^{-c_2\,\sigma}\right) - c_3\,\sigma
+$$
+
+| Firme | $c_1$ | $c_2$ | $c_3$ | $\mu_{\max}$ | $\sigma$ del pico |
+|---|---:|---:|---:|---:|---:|
+| Asfalto seco | 1,2801 | 23,99 | 0,52 | ≈ 1,17 | ≈ 0,17 |
+| Asfalto mojado | 0,857 | 33,822 | 0,347 | ≈ 0,80 | ≈ 0,13 |
+
+Elipse de fricción (círculo si $\mu_x = \mu_y$):
+
+$$
+\sqrt{F_x^2 + F_y^2} \le \mu\,F_z
+$$
+
+### 6.6. Ventajas e inconvenientes de modelos más completos
+
+| Nivel | Modelo | Estados nuevos | Parámetros nuevos | Ventaja principal | Inconveniente principal |
+|---|---|---|---|---|---|
+| 0 | Lineal + saturación (P2) | — | — | Simple y robusto | Tracción ideal; sin interacción Fx–Fy |
+| 1 | + Elipse de fricción por eje | — | reparto de Fx | Penaliza acelerar en curva | Hay que elegir qué fuerza se prioriza |
+| 2 | + Transferencia longitudinal | — | `h` | Fz realista al acelerar y frenar | `h` no viene en la P2 (hipótesis) |
+| 3 | + Rueda con Burckhardt | ω por eje (+2) | `J`, `r_r`, c1–c3 | Aparece σ: permite un TCS | Cambia z; dinámica rápida (¿dt?) |
+| 4 | Pacejka combinado | igual que 3 | B, C, D, E por eje | Curva completa Fx y Fy con pico | Coeficientes sin datos de neumático |
+
 
 ## 7. Integración numérica
 
@@ -165,7 +345,7 @@ La salida nos da los valores de las variables de estado en el siguiente instante
 
 ## 8. Hipótesis y limitaciones
 
-*Pendiente de desarrollar tras estudiar las ecuaciones originales.*
+Fx actúa en el CG, así que no genera momento de guiñada. Por eso el torque vectoring (tu prioridad 3) es imposible sin cambiar la planta: necesita repartir Fx entre izquierda y derecha. Apúntalo para la sección 8.
 
 ## 9. Conclusiones
 
