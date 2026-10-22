@@ -1,3 +1,13 @@
+% Integración de la dinámica longitudinal y lateral
+
+% u: variable de control = [Fx; delta] 
+% z: vector de estados del vehículo [X; Y; psi; vx; vy; r]
+% X, Y = posicion del CG global
+% psi = rumbo, ángulo de guiñada
+% vx, vy = velocidades en eje del chasis
+% r = velocidad de guiñada
+
+
 function z_next = pasoDinamico(z, u, p, dt)
     Fx = u(1);
     delta = u(2);
