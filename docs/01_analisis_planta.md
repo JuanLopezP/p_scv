@@ -345,7 +345,19 @@ $$
 
 ## 8. Hipótesis y limitaciones
 
-Fx actúa en el CG, así que no genera momento de guiñada. Por eso el torque vectoring (tu prioridad 3) es imposible sin cambiar la planta: necesita repartir Fx entre izquierda y derecha. Apúntalo para la sección 8.
+## 8. Hipótesis y limitaciones
+
+### 8.1. Hipótesis del modelo de bicicleta
+
+| Hipótesis | Qué supone | ¿La respeta `pasoDinamico`? | Consecuencia |
+|---|---|---|---|
+| Una sola vía | Las dos ruedas de cada eje se agrupan en una | <!-- --> | <!-- --> |
+| Movimiento plano | Sin cabeceo, balanceo ni transferencia de carga | <!-- --> | <!-- --> |
+| Ángulos pequeños | $\sin\theta \approx \theta$, $\cos\theta \approx 1$ | <!-- --> | <!-- --> |
+| Régimen estacionario | $v_x$ constante, radio ≫ batalla | <!-- --> | <!-- --> |
+
+<!-- Fuente: tema 2.2, diap. 26 -->
+<!-- Comentar: "fallan al límite de adherencia", y un FS trabaja ahí -->
 
 ## 9. Conclusiones
 
