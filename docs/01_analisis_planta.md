@@ -345,8 +345,6 @@ $$
 
 ## 8. Hipótesis y limitaciones
 
-## 8. Hipótesis y limitaciones
-
 ### 8.1. Hipótesis del modelo de bicicleta
 
 | Hipótesis | Qué supone | ¿La respeta `pasoDinamico`? | Consecuencia |
