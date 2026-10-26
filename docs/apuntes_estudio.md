@@ -18,7 +18,7 @@
 
 La desviación respecto a la trayectoria es $e_y$. Puedo estar desviado 0cm pero torcido 3-4º y eso me llevará a que en el próximo segundo me haya salido de la trayectoria. 
 
-Ejemplo de un tractor en ladera, este se escurre y se tuerce pero el gps tiene que intentar seguir la trayectoria y corregir esos grados que se encuentra torcido el tractor. 
+Ejemplo de un tractor en ladera, este se escurre y se tuerce. Para corregir esa desviación el controlador mantiene el morro hacia arriba para ir compensando y mantener la trayectoria.  
 
 ### 1.3 Matemáticas
 
@@ -68,7 +68,7 @@ $$
 | $\mu$ | Coeficiente de adherencia | – |
 
 ### 1.4 Relación con el código MATLAB
-- Estado: `z = [X, Y, psi, vx, vy, r]`. *[¿Están e_y y e_ψ en z? ¿Quién los calcula y con qué?]*
+- Estado: `z = [X, Y, psi, vx, vy, r]`. Los valores de *[¿Están e_y y e_ψ en z? ¿Quién los calcula y con qué?]*
 - Actuador: `u(2) = delta`.
 - Trayectoria: `path` = lista de puntos [x y] (P4).
 - Saturación del agarre: `Fyd`, `Fyt` en `pasoDinamico`.
@@ -83,27 +83,72 @@ $$
 
 ---
 
-## 2. Controladores geométricos: Pure Pursuit y Stanley
-*(pendiente: lo vemos juntos)*
+## 2. Controladores geométricos: Pure Pursuit
 
-## 3. Modelo de bicicleta lineal en errores
-*(pendiente)*
+### 2.1 Idea
+*[En 2–3 frases: qué punto persigue el coche y qué calcula el controlador.]*
 
-## 4. LQR
-*(pendiente)*
+### 2.2 Física
+*[Por qué funciona como "mirar lejos" al conducir. Qué pasa con L_d grande y con L_d pequeña. Qué ignora el modelo (deriva, neumático).]*
 
-## 5. MPC
-*(pendiente)*
+### 2.3 Matemáticas
 
-## 6. Puente con el autoguiado agrícola (StarFire)
-*(pendiente)*
+Hipótesis: modelo **cinemático** de bicicleta (ruedas sin deriva, $\alpha_d = \alpha_t = 0$), punto de referencia en el eje trasero.
 
+Punto objetivo: punto de la trayectoria a distancia $L_d$ del vehículo. Ángulo entre el rumbo y la recta al punto objetivo:
 
-### ¿Qué significa seguir una trayectoria? 
+$$
+\alpha = \operatorname{atan2}(Y_{obj} - Y,\; X_{obj} - X) - \psi
+$$
 
-1. Controlador lateral tiene que de algunra forma llevar a cero dos errores y solo puede actuar en una variable (el volante $\delta$): 
-- Error lateral $e_y$: Distancia a la que estoy de la línea que me marca la trayectoria objetivo. 
-- Error de rumbo: Desviación de mi morro respecto a la dirección de la línea en ese punto. 
-2. Física. Puedo estar a 0 cm de la trayectoria pero estar torcido y por tanto en un segundo ya estaré fuera de esa trayectoria.
-Esta es la razón por la que hacen falta los dos errores. 
-3. 
+Geometría del arco (la cuerda $L_d$ subtiende el arco de radio $R$):
+
+$$
+L_d = 2R \sin\alpha \;\Rightarrow\; \kappa = \frac{1}{R} = \frac{2\sin\alpha}{L_d}
+$$
+
+Bicicleta cinemática (relación dirección–radio):
+
+$$
+\tan\delta = \frac{L}{R} = L\,\kappa
+$$
+
+Ley de control:
+
+$$
+\boxed{\;\delta = \arctan\!\left(\frac{2L\sin\alpha}{L_d}\right)\;}
+$$
+
+Distancia de anticipación dependiente de la velocidad:
+
+$$
+L_d = k_v\, v_x + L_{d,min}
+$$
+
+| Símbolo | Significado | Unidades |
+|---|---|---|
+| $L_d$ | Distancia de anticipación (look-ahead) | m |
+| $\alpha$ | Ángulo entre el rumbo y la recta al punto objetivo | rad |
+| $R,\ \kappa$ | Radio y curvatura del arco | m, 1/m |
+| $L = l_d + l_t$ | Batalla | m |
+| $k_v$ | Ganancia de anticipación con la velocidad | s |
+| $L_{d,min}$ | Anticipación mínima (a baja velocidad) | m |
+
+### 2.4 Relación con el código MATLAB
+- Función: `[delta, mem] = controlLateral(est, path, p, mem)` (P4).
+- `mem.idx`: *[¿para qué guarda el índice del último punto?]*
+- Batalla: `L = p.ld + p.lt`.
+- Error medido con `errorLateral(x, y, path)` (P4), positivo a la izquierda.
+- *[Punto de referencia: ¿la P4 usa el CG (X, Y de `z`) o el eje trasero? Compruébalo.]*
+
+### 2.5 Limitaciones
+- *[Recorta curvas: ¿por qué?]*
+- *[Oscila: ¿cuándo?]*
+- *[Ignora la dinámica (v_y, deriva, saturación): ¿qué pasa a alta velocidad?]*
+
+### 2.6 Fuentes
+- P4, *Seguimiento de trayectoria* (D. Rodríguez).
+- Coulter, R. C. (1992). *Implementation of the Pure Pursuit Path Tracking Algorithm*. CMU-RI-TR-92-01.
+
+### 2.7 Dudas abiertas
+> DUDA:
