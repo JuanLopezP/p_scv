@@ -345,17 +345,71 @@ $$
 
 ## 8. Hipótesis y limitaciones
 
+<!-- Introducción (redactar): diferencia entre hipótesis (se supone a propósito) y limitación (lo que el modelo no puede reproducir por ello). -->
+ 
 ### 8.1. Hipótesis del modelo de bicicleta
-
+ 
 | Hipótesis | Qué supone | ¿La respeta `pasoDinamico`? | Consecuencia |
 |---|---|---|---|
-| Una sola vía | Las dos ruedas de cada eje se agrupan en una | <!-- --> | <!-- --> |
-| Movimiento plano | Sin cabeceo, balanceo ni transferencia de carga | <!-- --> | <!-- --> |
-| Ángulos pequeños | $\sin\theta \approx \theta$, $\cos\theta \approx 1$ | <!-- --> | <!-- --> |
-| Régimen estacionario | $v_x$ constante, radio ≫ batalla | <!-- --> | <!-- --> |
-
-<!-- Fuente: tema 2.2, diap. 26 -->
-<!-- Comentar: "fallan al límite de adherencia", y un FS trabaja ahí -->
+| Una sola vía | Las dos ruedas de cada eje se agrupan en una | Sí: solo `Fyd` y `Fyt`, una por eje | Sin reparto izquierda/derecha ni transferencia lateral |
+| Movimiento plano | Sin cabeceo, balanceo ni transferencia de carga | Sí: `Fzd` y `Fzt` constantes | La carga no cambia al acelerar, frenar o girar |
+| Ángulos pequeños | $\tan\alpha \approx \alpha$ | Sí: α sin `atan` | Error con α grandes (derrape) |
+| Régimen estacionario | $v_x$ constante, radio ≫ batalla | **No**: integra $v_x$ con acoplamiento $v_y r$ | Más general que el modelo lineal de la diap. 28 |
+ 
+<!-- Fuente: tema 2.2, diap. 26. Comentar: "fallan al límite de adherencia", y un FS trabaja ahí -->
+<!-- Comentar: ψ sí usa sin/cos exactos al pasar a ejes globales; la hipótesis de ángulos pequeños afecta a δ y α, no a ψ -->
+ 
+### 8.2. Limitaciones del neumático y de las fuerzas
+ 
+| Limitación | Dónde se ve en el código | Efecto |
+|---|---|---|
+| Sin dinámica de rueda ni deslizamiento $\sigma$ | `Fx` entra directo al chasis | Tracción ideal e instantánea; un TCS no tiene variable que regular |
+| Sin elipse de fricción | `Fx` y `Fy` se saturan por separado | Sobrestima la aceleración en curva |
+| Neumático lineal con saturación dura | `Fy = C·α` recortada con `min`/`max` | Sin pico ni caída tras el pico |
+| $C_\alpha$ y $\mu$ constantes | Parámetros fijos en `p` | Sin efecto de carga, presión ni temperatura |
+| $F_{x,\max}$ suma ambos ejes | `Fx_max = mu_d*Fzd + mu_t*Fzt` | Tracción total implícita; el agarre nunca limita en tracción |
+ 
+<!-- Matiz: con μ constante, la transferencia lateral no cambia la fuerza máxima de un eje; solo importa con sensibilidad a la carga (Pacejka) -->
+ 
+### 8.3. Limitaciones de la dinámica del vehículo
+ 
+| Limitación | Efecto |
+|---|---|
+| $F_x$ aplicada en el CG | Sin momento de guiñada por reparto de par: no permite torque vectoring |
+| Sin carga aerodinámica (no hay $C_L$) | El agarre no crece con la velocidad |
+| Motor de fuerza constante sin límite de potencia | 2500 N a 36 m/s son 90 kW (reglamento FS: 80 kW, fuente externa por comprobar) |
+| Sin dinámica de actuadores ni límite de $\delta$ | Las entradas se aplican de forma instantánea y sin tope |
+ 
+### 8.4. Limitaciones numéricas
+ 
+| Aspecto | Código | Efecto |
+|---|---|---|
+| Euler explícito, $dt = 0{,}002$ s | `x_next = x + dx*dt` | Suficiente hoy; puede no serlo con una rueda (dinámica rápida) |
+| Velocidad corregida | `vx_c = max(vx, 1)` | α erróneo (menor que el real) por debajo de 1 m/s |
+| Sin marcha atrás | `vx_next = max(..., 0)` | No modela vx < 0 |
+| Rodadura con `sign(vx)` | `sign(0) = 0` | Sin resistencia de rodadura en el arranque |
+ 
+### 8.5. Riesgos de integración
+ 
+| Riesgo | Por qué importa |
+|---|---|
+| Límites del motor y del freno en el controlador | Si el simulador del profesor usa otro controlador, la planta acepta hasta 3300 N |
+| Ampliar $z$ (velocidad de rueda) | Puede romper el simulador del profesor si espera 6 estados (pendiente de confirmar) |
+| Cambiar $u$ (par en vez de fuerza, reparto izquierda/derecha) | Cambia la interfaz `pasoDinamico(z, u, p, dt)` |
+| Parámetros nuevos (`h`, `J`, `r_r`, coeficientes) | Deben tener valor por defecto para no fallar con el `p` del profesor |
+ 
+### 8.6. Limitaciones que ataca la mejora propuesta
+ 
+| Limitación | Nivel de la escalera (6.6) que la resuelve |
+|---|---|
+| Sin elipse de fricción | 1 |
+| Límites del motor fuera de la planta | 1 |
+| Sin transferencia longitudinal de carga | 2 |
+| Sin rueda ni deslizamiento | 3 |
+| Neumático sin pico | 3 (longitudinal) y 4 (combinado) |
+| Una sola vía, sin torque vectoring | Fuera de alcance (prioridad 3) |
+ 
+<!-- Cerrar (redactar): qué queda fuera y por qué; más realismo no implica mejores tiempos -->
 
 ## 9. Conclusiones
 
