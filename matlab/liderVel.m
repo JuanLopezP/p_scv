@@ -6,5 +6,5 @@ function Vl = liderVel(t)
     elseif t < 14
         Vl = v_cru;                              % crucero
     else
-        Vl = max(0, v_cru - 10*(t-14));          % frenazo a 10 m/s² hasta parar
+        Vl = max(8, v_cru - 3*(t-14));          % frenazo a 8 m/s² hasta parar
 end
