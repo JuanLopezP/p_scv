@@ -1,0 +1,14 @@
+# Vídeos
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.wmv
+*.m4v
+
+# Presentaciones
+*.ppt
+*.pptx
+*.odp
+*.key
