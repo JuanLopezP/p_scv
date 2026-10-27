@@ -86,10 +86,14 @@ $$
 ## 2. Controladores geométricos: Pure Pursuit
 
 ### 2.1 Idea
-*[En 2–3 frases: qué punto persigue el coche y qué calcula el controlador.]*
+En la trayectoria del coche, selecciono un punto a una distancia fija por delante del coche $L_d$ (look-ahead). Obtengo el arco de circunferencia que va desde el coche hasta el punto y coloco el volante $\delta$ para recorrer ese arco. 
+
+Cuando el coche avanza el punto avanza con él y se va recalculando todo de nuevo todo el rato. 
 
 ### 2.2 Física
-*[Por qué funciona como "mirar lejos" al conducir. Qué pasa con L_d grande y con L_d pequeña. Qué ignora el modelo (deriva, neumático).]*
+Equivale a la forma en la que conducimos en la vida real, miramos a un punto en la carretera que se encuentra unos metros delante nuestra, no miramos el asfalto que hay delante de las ruedas. 
+
+En el tractor ocurre lo mismo, miras al final de la pasada y no a la rueda.
 
 ### 2.3 Matemáticas
 
@@ -142,13 +146,17 @@ $$
 - *[Punto de referencia: ¿la P4 usa el CG (X, Y de `z`) o el eje trasero? Compruébalo.]*
 
 ### 2.5 Limitaciones
-- *[Recorta curvas: ¿por qué?]*
-- *[Oscila: ¿cuándo?]*
-- *[Ignora la dinámica (v_y, deriva, saturación): ¿qué pasa a alta velocidad?]*
+- Recorta curvas, esto ocurre porque el punto objetivo está lejos, ya dentro de la curva, y la cuerda que va del coche a ese punto pasa por el interior de la curva. El coche apunta a ese punto “atajando” y además el arco que calcula es más abierto que la curva real.
+
+- Oscila cuadno tomamos una distancia $L_d$ demasiado pequeña, busca ese punto pero al llegar por la velocidad se pasa y tiene que volver a corregir. Tal y como se ve en la figura.
+- A alta velocidad tenemos que aumentar la distancia $L_d$  ya que la distancia que recorremos en cada instante es mayor y por lo tanto tenemos que tener en cuenta esa distancia que recorremos mientras ajustamos el giro del volante.
+![alt text](image.png)
 
 ### 2.6 Fuentes
 - P4, *Seguimiento de trayectoria* (D. Rodríguez).
 - Coulter, R. C. (1992). *Implementation of the Pure Pursuit Path Tracking Algorithm*. CMU-RI-TR-92-01.
+- https://es.mathworks.com/help/robotics/ug/pure-pursuit-controller.html
+- https://thomasfermi.github.io/Algorithms-for-Automated-Driving/Control/PurePursuit.html
 
 ### 2.7 Dudas abiertas
 > DUDA:
