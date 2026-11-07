@@ -7,5 +7,3 @@ La asignatura Sistemas de Control de Vehículos aborda el modelado y control del
 A lo largo del curso se estudian la dinámica y el modelado del vehículo, el control del tren de potencia y del chasis, y sistemas como el ABS, ESP o control de tracción. También se introducen tecnologías más avanzadas relacionadas con los sistemas ADAS y la conducción autónoma, trabajando con sensores, estimación y algoritmos de control.
 
 En conjunto, la asignatura combina conocimientos de automoción, control automático, modelado y programación, buscando entender el vehículo como un sistema dinámico completo y aplicar técnicas de control a situaciones cercanas a las que aparecen en vehículos reales y autónomos.
-
-Hola caracola!
