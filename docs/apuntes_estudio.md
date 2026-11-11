@@ -411,7 +411,7 @@ $$
 ## 5. Control predictivo (MPC) lateral
 
 ### 5.1 Idea
-*[En 2–3 frases: el ciclo medir → predecir → optimizar → aplicar solo el primero → repetir. Diferencia con LQR.]*
+d
 
 ### 5.2 Física
 *[Por qué anticiparse a la curva importa (cadena δ → r → ψ → e_y). Qué significa "respetar el agarre". Qué pasa si el horizonte es demasiado corto (tema 3.3, diap. 14).]*
